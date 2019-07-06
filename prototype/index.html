@@ -9,15 +9,17 @@
 </head>
 
 <body>
-    <form action="#" target="_blank">
+    <form name="wis">
         <fieldset>
-          <legend>Данные репозитория</legend>
-          <p><label for="name">Имя пользователя</label><input type="text" id="name"></p>
-          <p><label for="repository">Название репозитория</label><input type="text" id="repository"></p>
+            <legend>Данные репозитория</legend>
+            <p><label for="userName">Имя пользователя</label><input type="text" name="userName"></p>
+            <p><label for="repositoryName">Название репозитория</label><input type="text" name="repositoryName"></p>
         </fieldset>
-      <p><input type="submit" value="Запросить данные"></p>
-      <p><textarea rows="10" cols="45" name="result" placeholder="Здесь будет выведен результат"></textarea></p>
-      </form>
+        <p><input type="submit" id="submit" value="Запросить данные"></p>
+        <table></table>
+    </form>
+
+
     <script src="./js/scripts.js"></script>
 </body>
 
