@@ -1,0 +1,47 @@
+.ghSearch {
+    min-width: 600px;
+}
+.ghSearch .inputContainer__element{
+    display: flex;
+}
+.ghSearch .table{
+    border: 2px solid gray;
+    border-collapse: collapse;
+    margin-bottom: 0.5rem;
+}
+.ghSearch .inputContainer{
+    width: 300px;
+}
+.ghSearch .inputContainer__text{
+    width: 150px;
+}
+.ghSearch .submitButton{
+    margin: 1rem 0;
+    margin-left: 2px;
+}
+.ghSearch .header{
+    border-collapse: collapse;
+    background-color: lightgray;
+    border-bottom: 1px solid gray
+}
+.ghSearch .Commit{
+    min-width: 160px;
+    word-break: break-all;
+    padding: 0 0.5rem;
+}
+.ghSearch .tableRow:hover {
+    background-color:  lightgray;
+}
+.modalDiv {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9000;
+    width: 100vw;
+    height: 100vh;
+    background-color: gray;
+    opacity: 0.97;
+    white-space: pre;
+    scroll-behavior: unset;
+    overflow: scroll;
+  }

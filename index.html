@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/styles.css">
+    <title>WIS-test</title>
+</head>
+
+<body>
+    <form class="ghSearch" name="wis">
+        <fieldset class="inputContainer">
+            <legend>Search for commits</legend>
+            <div class="inputContainer__element">
+                <label for="userName" class="inputContainer__text">User name</label>
+                <input type="text" name="userName" id="userName" value="thoughtbot">
+            </div>
+            <div class="inputContainer__element">
+                <label for="repositoryName" class="inputContainer__text">Repository name</label>
+                <input type="text" name="repositoryName" id="repositoryName" value="guides">
+            </div>
+        </fieldset>
+        <input type="submit" class="submitButton" value="Fetch data">
+        <table></table>
+        <div class="paginationButtonsBar"></div>
+    </form>
+
+
+    <script src="./js/scripts.js"></script>
+</body>
+
+</html>

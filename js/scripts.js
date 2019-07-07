@@ -1,42 +1,37 @@
 const tableHeaders = ["Author", "Commit", "Message"];
-const requestDataButton = document.getElementById("submit");
+const requestDataButton = document.querySelector(".submitButton");
 const table = document.querySelector("table");
+const paginationButtonsBar = document.querySelector(".paginationButtonsBar");
 let commits = {};
 let paginationLinks = [];
 
 requestDataButton.addEventListener("click", function (event) {
   const userName = document.forms.wis.userName.value;
   const repositoryName = document.forms.wis.repositoryName.value;
+  /* The API needs another search parameter in addition to repository, 
+  so author-date was used for that reason */
+  const requestDataUrl = `https://api.github.com/search/commits?q=repo:` +
+                     `${userName}/${repositoryName}+author-date:>2000-01-01`;
+  
   event.preventDefault();
-  renderData(userName, repositoryName);
+  renderDataByUrl(requestDataUrl);
 });
 
-async function renderData(userName, repositoryName, NEWurl) {
+async function renderDataByUrl(url) {
   clearResults();
   
-  commits = await getCommits(userName, repositoryName, NEWurl);
+  commits = await getCommits(url);
   if (!commits) {
     return renderBadRequestMessage();
   }
 
-  renderTableHead(table);
-  renderTableCells(table, commits);
+  renderResultTableHeader(table);
+  renderResultTableRows(table, commits);
   renderPaginationButtons(paginationLinks);
-  // Add listeners to each table row
 }
 
-async function getCommits(userName, repositoryName, NEWurl) {
-  const urlBoilerplate = "https://api.github.com/search/commits?q=";
-  /* The API needs another search parameter in addition to repository, 
-  so author-date was used for that reason */
-  let url = `${urlBoilerplate}repo:${userName}/${repositoryName}` +
-    `+author-date:>2000-01-01`;
+async function getCommits(url) {
   const headers = { "Accept": "application/vnd.github.cloak-preview" };
-
-  // TEMP
-  if (NEWurl) {
-    url = NEWurl;
-  }
 
   const response = await fetch(url, { "headers": headers })
   if (!response.ok) { return false }
@@ -60,26 +55,28 @@ function getPaginationLinks(response) {
   return true;
 }
 
-function renderPaginationButtons(paginationLinks) {
-  paginationLinks.forEach(link => {
+function renderPaginationButtons(links) {
+  links.forEach(link => {
     const paginationButton = document.createElement("button");
     paginationButton.textContent = link.title;
-    paginationButton.addEventListener("click", e => renderData(null, null, link.url));
-    table.appendChild(paginationButton);
+    paginationButton.addEventListener("click", () => {
+      renderDataByUrl(link.url)
+    });
+    paginationButtonsBar.appendChild(paginationButton);
     })
-};
-
+    paginationLinks = [];
+  }
 
 function clearResults() {
   while (table.firstChild) {
     table.removeChild(table.firstChild);
   }
+  while (paginationButtonsBar.firstChild) {
+    paginationButtonsBar.removeChild(paginationButtonsBar.firstChild);
+  }
 }
 
-
-
-
-function renderTableHead(table) {
+function renderResultTableHeader(table) {
   let thead = table.createTHead();
   let row = thead.insertRow();
 
@@ -87,74 +84,80 @@ function renderTableHead(table) {
     let th = document.createElement("th");
     let text = document.createTextNode(tableHeaders[i]);
     th.appendChild(text);
+    th.classList.add(tableHeaders[i]);
     row.appendChild(th);
   }
+  table.classList.add("table");
+  row.classList.add("header");
 }
 
-function renderTableCells(table, commits) {
+function renderResultTableRows(table, commits) {
   for (commit of commits.items) {
-    let row, cell, text;
     renderFirstCell();
     renderSecondCell();
     renderThirdCell();
   }
-  addlisteners();
+  addTableRowListeners();
+
   function renderFirstCell() {
     row = table.insertRow();
+    row.classList.add("tableRow");
     cell = row.insertCell();
-    text = document.createTextNode(commit.commit.author.name);
+    cell.classList.add(tableHeaders[0]);
+    text = document.createTextNode(commit.commit.author.name.substring(0,30));
     cell.appendChild(text);
   }
 
   function renderSecondCell() {
     cell = row.insertCell();
+    cell.classList.add(tableHeaders[1]);
     text = document.createTextNode(commit.sha);
     cell.appendChild(text);
   }
 
   function renderThirdCell() {
+    const 
     cell = row.insertCell();
+    cell.classList.add(tableHeaders[2]);
     text = document.createTextNode(
-      `${commit.commit.message.substring(0, 80)}...`
+      `${commit.commit.message.substring(0, 120)}...`
     );
     cell.appendChild(text);
   }
 }
 
 function renderBadRequestMessage() {
-  let row = table.insertRow();
-  let cell = row.insertCell();
   let text = document.createTextNode('Request returned no data');
-  cell.appendChild(text);
+  paginationButtonsBar.appendChild(text);
 }
 
-function addlisteners() {
+function addTableRowListeners() {
   let newrow = document.getElementsByTagName('tr');
   [].forEach.call(newrow, function (elem) {
     elem.addEventListener('click', function (el) {
       const sha = this.children[1].innerHTML;
       for (commit of commits.items) {
-        if (sha == commit.sha) {
-          showCover();
-          function showCover() {
-            let coverDiv = document.createElement('div');
-            coverDiv.id = 'cover-div';
-            let url = `https://api.github.com/repos/${commit.repository.full_name}/commits/${sha}`;
-            fetch(url).then(function (response) {
-              return response.text().then(function (text) {
-                let content = document.createTextNode(text);
-                coverDiv.appendChild(content);
-                document.body.appendChild(coverDiv);
-              })
-            });
-            coverDiv.addEventListener("click", hideCover);
-          }
-        }
+        if (sha == commit.sha) renderCommitDetailsModal(commit, sha);
       }
-    })
+    });
   });
 }
 
-function hideCover() {
-  document.body.removeChild(document.getElementById('cover-div'));
+function renderCommitDetailsModal(commit, sha) {
+  let modalDiv = document.createElement('div');
+  let url = `https://api.github.com/repos/${commit.repository.full_name}` + 
+            `/commits/${sha}`;
+  fetch(url).then(function (response) {
+    return response.text().then(function (text) {
+      let content = document.createTextNode(text);
+      modalDiv.appendChild(content);
+      modalDiv.classList.add("modalDiv");
+      table.appendChild(modalDiv);
+    })
+  });
+  modalDiv.addEventListener("click", hideModal);
+}
+
+function hideModal() {
+  table.removeChild(document.querySelector('.modalDiv'));
 }
