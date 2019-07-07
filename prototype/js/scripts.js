@@ -2,6 +2,7 @@ const tableHeaders = ["Author", "Commit", "Message"];
 const requestDataButton = document.getElementById("submit");
 const table = document.querySelector("table");
 let commits = {};
+let paginationLinks = [];
 
 requestDataButton.addEventListener("click", function (event) {
   const userName = document.forms.wis.userName.value;
@@ -10,18 +11,64 @@ requestDataButton.addEventListener("click", function (event) {
   renderData(userName, repositoryName);
 });
 
-async function renderData(userName, repositoryName) {
+async function renderData(userName, repositoryName, NEWurl) {
   clearResults();
-
-  commits = await getCommits(userName, repositoryName);
+  
+  commits = await getCommits(userName, repositoryName, NEWurl);
   if (!commits) {
-    return handleBadRequest();
+    return renderBadRequestMessage();
   }
 
   renderTableHead(table);
   renderTableCells(table, commits);
+  renderPaginationButtons(paginationLinks);
   // Add listeners to each table row
 }
+
+async function getCommits(userName, repositoryName, NEWurl) {
+  const urlBoilerplate = "https://api.github.com/search/commits?q=";
+  /* The API needs another search parameter in addition to repository, 
+  so author-date was used for that reason */
+  let url = `${urlBoilerplate}repo:${userName}/${repositoryName}` +
+    `+author-date:>2000-01-01`;
+  const headers = { "Accept": "application/vnd.github.cloak-preview" };
+
+  // TEMP
+  if (NEWurl) {
+    url = NEWurl;
+  }
+
+  const response = await fetch(url, { "headers": headers })
+  if (!response.ok) { return false }
+
+  getPaginationLinks(response);
+  const result = await response.json();
+  return result;
+}
+
+function getPaginationLinks(response) {
+  const link = response.headers.get("link");
+  if (!link) { return false }
+
+  const links = link.split(",");
+  paginationLinks = links.map(a => {
+    return {
+      url: a.split(";")[0].replace("<", "").replace(">", ""),
+      title: a.split(";")[1],
+    }
+  })
+  return true;
+}
+
+function renderPaginationButtons(paginationLinks) {
+  paginationLinks.forEach(link => {
+    const paginationButton = document.createElement("button");
+    paginationButton.textContent = link.title;
+    paginationButton.addEventListener("click", e => renderData(null, null, link.url));
+    table.appendChild(paginationButton);
+    })
+};
+
 
 function clearResults() {
   while (table.firstChild) {
@@ -29,19 +76,8 @@ function clearResults() {
   }
 }
 
-async function getCommits(userName, repositoryName) {
-  const urlBoilerplate = "https://api.github.com/search/commits?q=";
-  /* The API needs another search parameter in addition to repository, 
-  so author-date was used for that reason */
-  const url = `${urlBoilerplate}repo:${userName}/${repositoryName}` +
-    `+author-date:>2000-01-01`;
-  const headers = { "Accept": "application/vnd.github.cloak-preview" };
 
-  const response = await fetch(url, { "headers": headers })
-  if (!response.ok) { return false }
-  const result = await response.json();
-  return result;
-}
+
 
 function renderTableHead(table) {
   let thead = table.createTHead();
@@ -78,20 +114,18 @@ function renderTableCells(table, commits) {
 
   function renderThirdCell() {
     cell = row.insertCell();
-    text = document.createTextNode(commit.commit.message.substring(0, 80));
+    text = document.createTextNode(
+      `${commit.commit.message.substring(0, 80)}...`
+    );
     cell.appendChild(text);
   }
 }
 
-function handleBadRequest() {
+function renderBadRequestMessage() {
   let row = table.insertRow();
   let cell = row.insertCell();
   let text = document.createTextNode('Request returned no data');
   cell.appendChild(text);
-}
-
-function handleTableRowClick() {
-  alert("click");
 }
 
 function addlisteners() {
@@ -105,12 +139,11 @@ function addlisteners() {
           function showCover() {
             let coverDiv = document.createElement('div');
             coverDiv.id = 'cover-div';
-            let url = `https://api.github.com/repos/skrikl/ljs/commits/${sha}`;
+            let url = `https://api.github.com/repos/${commit.repository.full_name}/commits/${sha}`;
             fetch(url).then(function (response) {
               return response.text().then(function (text) {
                 let content = document.createTextNode(text);
                 coverDiv.appendChild(content);
-                // coverDiv.innerHTML = JSON.stringify(text, null, "\t");
                 document.body.appendChild(coverDiv);
               })
             });
@@ -121,17 +154,7 @@ function addlisteners() {
     })
   });
 }
-//
-/* function getData(pageId) {
-  console.log(pageId);
-  var myRequest = new Request(pageId + '.txt');
-  fetch(myRequest).then(function(response) {
-    return response.text().then(function(text) {
-      myArticle.innerHTML = text;
-    });
-  });
-} */
-//
+
 function hideCover() {
   document.body.removeChild(document.getElementById('cover-div'));
 }
